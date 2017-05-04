@@ -1,0 +1,37 @@
+# Unity generated
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ibrary/
+/Assets/AssetStoreTools*
+sysinfo.txt
+*.stackdump
+*.pidb.meta
+# Visual Studio / MonoDevelop / Rider generated
+[Ee]xported[Oo]bj/
+.vs/
+/*.userprefs
+/*.csproj
+/*.pidb
+/*.suo
+/*.sln*
+/*.[Uu]ser
+/*.unityproj
+/*.booproj
+/*.tmp
+/*.svd
+/.idea*/
+.consulo/
+ 
+# Builds
+*.apk
+*.ipa
+# OS generated
+.DS_Store*
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+[Tt]humbs.db
+[Dd]esktop.ini
