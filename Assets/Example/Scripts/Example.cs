@@ -14,6 +14,10 @@ public class Example : MonoBehaviour
             return;
         }
 
-        host.text = HTTPLogServer.Instance.Host;
+        host.text = HTTPServer.Instance.Host;
+
+	    Debug.LogError("Test log error");
+	    Debug.LogWarning("Test log warning");
+	    Debug.Log("Test log debug");
     }
 }

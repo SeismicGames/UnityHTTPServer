@@ -7,32 +7,33 @@ using System.IO;
 
 namespace UnityHTTP
 {
-    public class HTTPLogServer
+    public class HTTPServer
     {
-        public static readonly string LOG_FILENAME = Application.persistentDataPath + Path.DirectorySeparatorChar + "unity.log";
-
         private readonly HttpListener _httpListener;
         private readonly Dictionary<Regex, ARoute> _routes = new Dictionary<Regex, ARoute>();
-
+        
         // Singleton method
-        private static HTTPLogServer _instance;
-        public static HTTPLogServer Instance
+        private static HTTPServer _instance;
+        public static HTTPServer Instance
         {
-            get { return _instance ?? (_instance = new HTTPLogServer()); }
+            get { return _instance ?? (_instance = new HTTPServer()); }
         }
 
         // class parameter methods
         private readonly string _host = "";
         public string Host
         {
-            get
-            {
-                return _host;
-            }
+            get { return _host; }
+        }
+
+        private readonly List<ARoute> _navLinks = new List<ARoute>();
+        public List<ARoute> NavLinks
+        {
+            get { return _navLinks; }
         }
 
         // construtor
-        private HTTPLogServer()
+        private HTTPServer()
         {
             // test if available
             if (!HttpListener.IsSupported)
@@ -43,7 +44,7 @@ namespace UnityHTTP
             Debug.Log("HTTPListener is supported");
 
             // set up HTTPListener
-            _host = "http://" + Network.player.ipAddress + ":8080/";
+            _host = "http://" + Network.player.ipAddress + ":9090/";
             _httpListener = new HttpListener();
             _httpListener.Prefixes.Add(_host);
             _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
@@ -51,8 +52,8 @@ namespace UnityHTTP
             // set up routes
             // log route
             LogRoute logRoute = new LogRoute();
-            _routes[new Regex(@"^/log/?([a-zA-Z0-9\-]*)/?")] = logRoute;
-
+            _routes[logRoute.GetPattern()] = logRoute;
+            _navLinks.Add(logRoute);
         }
 
         // class methods
@@ -62,9 +63,10 @@ namespace UnityHTTP
             {
                 _httpListener.Close();
             }
-            if (File.Exists(LOG_FILENAME))
+
+            foreach (var routePair in _routes)
             {
-                File.Delete(LOG_FILENAME);
+                routePair.Value.Dispose();
             }
             _instance = null;
         }

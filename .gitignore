@@ -23,6 +23,8 @@ sysinfo.txt
 /*.svd
 /.idea*/
 .consulo/
+.localhistory/
+*.nuspec
  
 # Builds
 *.apk
