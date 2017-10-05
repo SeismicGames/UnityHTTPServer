@@ -32,6 +32,12 @@ namespace UnityHTTP
             get { return _navLinks; }
         }
 
+        private readonly string _title;
+        public string Title
+        {
+            get { return _title;  }
+        }
+
         // construtor
         private HTTPServer()
         {
@@ -43,17 +49,13 @@ namespace UnityHTTP
             }
             Debug.Log("HTTPListener is supported");
 
+            _title = Application.productName;
+
             // set up HTTPListener
             _host = "http://" + Network.player.ipAddress + ":9090/";
             _httpListener = new HttpListener();
             _httpListener.Prefixes.Add(_host);
             _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
-
-            // set up routes
-            // log route
-            LogRoute logRoute = new LogRoute();
-            _routes[logRoute.GetPattern()] = logRoute;
-            _navLinks.Add(logRoute);
         }
 
         // class methods
@@ -73,12 +75,53 @@ namespace UnityHTTP
 
         public void StartListening()
         {
-            if (_httpListener != null)
+            StartListening(new List<ARoute>
             {
-                _httpListener.Start();
-                Debug.Log("Listening on " + _host);
-                _httpListener.BeginGetContext(HTTPCallback, _httpListener);
+                new LogRoute()
+            });
+        }
+
+        public void StartListening(params ARoute[] routes)
+        {
+            List<ARoute> routeList = new List<ARoute>(routes) { new LogRoute() };
+            StartListening(routeList);
+        }
+
+        public void StartListening(List<ARoute> routes)
+        {
+            // make sure the LogRoute is in the list
+            bool containsLog = false;
+            for (int i = 0; i < routes.Count; i++)
+            {
+                if (routes[i].GetType() != typeof(LogRoute))
+                {
+                    continue;
+                }
+
+                containsLog = true;
+                break;
             }
+
+            if (!containsLog)
+            {
+                routes.Add(new LogRoute());
+            }
+
+            // set up routes
+            for (int i = 0; i < routes.Count; i++)
+            {
+                _routes[routes[i].GetPattern()] = routes[i];
+                _navLinks.Add(routes[i]);
+            }
+
+            if (_httpListener == null)
+            {
+                return;
+            }
+
+            _httpListener.Start();
+            Debug.Log("Listening on " + _host);
+            _httpListener.BeginGetContext(HTTPCallback, _httpListener);
         }
 
         // HTTP listener callback
@@ -88,43 +131,63 @@ namespace UnityHTTP
 
             HttpListenerContext context = thisListener.EndGetContext(result);
             HttpListenerRequest request = context.Request;
-            HttpListenerResponse response = context.Response;
 
-            foreach (Regex regex in _routes.Keys)
+            using (HttpListenerResponse response = context.Response)
             {
-                // TODO: list available paths if path == /, maybe?
-                Match match = regex.Match(request.Url.AbsolutePath);
-                if (match.Success)
+
+                if (request.Url.AbsolutePath.Equals(@"/"))
                 {
-                    // parse id and data
-                    string data = "";
-                    if (request.HttpMethod.ToUpper().Equals("POST") || request.HttpMethod.ToUpper().Equals("PUT"))
-                    {
-                        using (StreamReader reader = new StreamReader(request.InputStream, request.ContentEncoding))
-                        {
-                            data = reader.ReadToEnd();
-                        }
-                    }
+                    response.Redirect(@"/log/");
 
-                    string id = "";
-                    if (match.Groups.Count > 1)
-                    {
-                        id = match.Groups[1].Value;
-                    }
-
-                    // fire response handler
-                    _routes[regex].HandleRequest(request.HttpMethod.ToUpper(), response, id, data);
+                    // start listener again
                     _httpListener.BeginGetContext(HTTPCallback, _httpListener);
                     return;
                 }
+
+                foreach (Regex regex in _routes.Keys)
+                {
+                    Match match = regex.Match(request.Url.AbsolutePath);
+                    if (!match.Success) continue;
+
+                    try
+                    {
+                        // parse id and data
+                        string data = "";
+                        if (request.HttpMethod.ToUpper().Equals("POST") ||
+                            request.HttpMethod.ToUpper().Equals("PUT"))
+                        {
+                            using (StreamReader reader =
+                                new StreamReader(request.InputStream, request.ContentEncoding))
+                            {
+                                data = reader.ReadToEnd();
+                            }
+                        }
+
+                        string id = "";
+                        if (match.Groups.Count > 1)
+                        {
+                            id = match.Groups[1].Value;
+                        }
+
+                        // fire response handler
+                        _routes[regex].HandleRequest(request.HttpMethod.ToUpper(), response, id, data);
+
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogErrorFormat("HTTPServer error: {0}", e.Message);
+                        ARoute.SendResponse(response, e.Message, 500);
+                    }
+
+                    // start listener again
+                    _httpListener.BeginGetContext(HTTPCallback, _httpListener);
+                    return;
+                }
+
+                // return 404 and start listener again
+                ARoute.SendResponse(response, "", 404);
+                _httpListener.BeginGetContext(HTTPCallback, _httpListener);
             }
-
-            // return 404
-            response.StatusCode = 404;
-            response.Close();
-
-            // start listener again
-            _httpListener.BeginGetContext(HTTPCallback, _httpListener);
         }
     }
 }

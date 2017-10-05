@@ -22,7 +22,7 @@ namespace UnityHTTP
 
         void Start()
         {
-            HTTPServer.Instance.StartListening();
+            StartServer();
         }
 
         void OnDestroy()
@@ -38,6 +38,11 @@ namespace UnityHTTP
 
             // TODO: find a dynamic way to add handlers
             Application.logMessageReceivedThreaded -= LogRoute.HandleLog;
+        }
+
+        protected virtual void StartServer()
+        {
+            HTTPServer.Instance.StartListening();
         }
     }
 }

@@ -1,18 +1,20 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using DotLiquid;
-using UnityEngine;
 
 namespace UnityHTTP
 {
     public abstract class ARoute
     {
-        [LiquidType("Content", "NavLinks")]
+        [LiquidType("Content", "NavLinks", "Title")]
         public class Menu
         {
             public List<NavLink> NavLinks { get; set; }
             public string Content { get; set; }
+            public string Title { get; set; }
         }
 
         [LiquidType("Title", "Target", "Class")]
@@ -58,7 +60,7 @@ namespace UnityHTTP
 
         public abstract Regex GetPattern();
 
-        protected Hash GetHTMLHash(ARoute that, string content)
+        protected Hash GetHTMLHash(ARoute that, string content, string title = null)
         {
             List <NavLink> links = new List<NavLink>();
             foreach (var navLink in HTTPServer.Instance.NavLinks)
@@ -76,10 +78,25 @@ namespace UnityHTTP
             {
                 menu = new Menu
                 {
+                    Title = title ?? HTTPServer.Instance.Title,
                     Content = content,
                     NavLinks = links
                 }
             });
+        }
+
+        public static void SendResponse(HttpListenerResponse response, string html, int code)
+        {
+            byte[] responseBuffer = Encoding.UTF8.GetBytes(html);
+
+            // send response
+            response.StatusCode = code;
+            response.ContentType = "text/html";
+            response.ContentLength64 = responseBuffer.Length;
+            using (Stream responseStream = response.OutputStream)
+            {
+                responseStream.Write(responseBuffer, 0, responseBuffer.Length);
+            }
         }
 
         public static Template GetHTMLTemplate()
@@ -93,18 +110,38 @@ namespace UnityHTTP
     
     <!--Bootstrap CSS-->
     <link rel = ""stylesheet"" href = ""https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css"" integrity = ""sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M"" crossorigin = ""anonymous"">         
+    <title>{{ menu.title }}</title>
+    <style>
+    body {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+    
+    .header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: .05rem solid #e5e5e5;
+    }
+    </style>
 </head>
            
 <body>
-    <ul class=""nav nav-tabs"">
-    {% for nav in menu.nav_links %}
-        <li class=""nav-item"">
-            <a class=""{{ nav.class }}"" href=""{{ nav.target }}"">{{ nav.title }}</a>
-        </li>
-    {% endfor %}
-    </ul>
-
-    {{ menu.content }}
+    <div class=""container"">
+        <div class=""header clearfix"">
+            <nav>
+                <ul class=""nav nav-pills float-right"">
+                {% for nav in menu.nav_links %}
+                    <li class=""nav-item"">
+                        <a class=""{{ nav.class }}"" href=""{{ nav.target }}"">{{ nav.title }}</a>
+                    </li>
+                {% endfor %}
+                </ul>
+            </nav>
+            <h3 class=""text-muted"">{{ menu.title }}</h3>
+        </div>
+        
+        {{ menu.content }}
+    </div>
 
     <!--Optional JavaScript-->
     <!--jQuery first, then Popper.js, then Bootstrap JS-->
@@ -116,3 +153,6 @@ namespace UnityHTTP
         }
     }
 }
+
+
+

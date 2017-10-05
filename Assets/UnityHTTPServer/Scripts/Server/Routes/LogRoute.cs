@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
 using DotLiquid;
 using UnityEngine;
@@ -18,17 +17,9 @@ namespace UnityHTTP
             string logContent = File.ReadAllText(LOG_FILENAME);
             Template template = GetHTMLTemplate();
             string html = template.Render(GetHTMLHash(this, logContent));
-            byte[] responseBuffer = Encoding.UTF8.GetBytes(html);
 
             // send response
-            response.StatusCode = 200;
-            response.ContentType = "text/html";
-            response.ContentLength64 = responseBuffer.Length;
-            using (Stream responseStream = response.OutputStream)
-            {
-                responseStream.Write(responseBuffer, 0, responseBuffer.Length);
-            }
-            response.Close();
+            SendResponse(response, html, 200);
         }
 
         protected override void Post(HttpListenerResponse response, string data)
