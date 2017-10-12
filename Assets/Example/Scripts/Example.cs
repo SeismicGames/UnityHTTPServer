@@ -6,6 +6,8 @@ public class Example : MonoBehaviour
 {
     public Text host;
 
+    private bool _hasUpdateRun = false;
+
 	void Start ()
 	{
         if (host == null)
@@ -15,9 +17,17 @@ public class Example : MonoBehaviour
         }
 
         host.text = HTTPServer.Instance.Host;
+    }
 
-	    Debug.LogError("Test log error");
-	    Debug.LogWarning("Test log warning");
-	    Debug.Log("Test log debug");
+    void Update()
+    {
+        if (!_hasUpdateRun)
+        {
+            Debug.LogError("Test log error");
+            Debug.LogWarning("Test log warning");
+            Debug.Log("Test log debug");
+
+            _hasUpdateRun = true;
+        }
     }
 }

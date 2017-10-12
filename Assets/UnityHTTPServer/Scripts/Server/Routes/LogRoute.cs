@@ -12,6 +12,12 @@ namespace UnityHTTP
     {
         public static readonly string LOG_FILENAME = Application.persistentDataPath + Path.DirectorySeparatorChar + "unity.log";
 
+        public LogRoute()
+        {
+            // TODO: find a dynamic way to add handlers
+            Application.logMessageReceivedThreaded += HandleLog;
+        }
+
         protected override void Get(HttpListenerResponse response)
         {
             string logContent = File.ReadAllText(LOG_FILENAME);
@@ -58,6 +64,8 @@ namespace UnityHTTP
             {
                 File.Delete(LOG_FILENAME);
             }
+
+            Application.logMessageReceivedThreaded -= HandleLog;
         }
 
         public static void HandleLog(string logString, string stackTrace, LogType logType)

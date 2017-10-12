@@ -2,47 +2,38 @@ using UnityEngine;
 
 namespace UnityHTTP
 {
-    public class HTTPGameObj : MonoBehaviour
+    public abstract class HTTPGameObj : MonoBehaviour
     {
-        private HTTPGameObj _instance;
-
-        void Awake()
+        private void Awake()
         {
-            if (_instance != null)
-            {
-                Destroy(gameObject); // There can be only one
-                return;
-            }
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-
-            // TODO: find a dynamic way to add handlers
-            Application.logMessageReceivedThreaded += LogRoute.HandleLog;
+            AwakeServer();
         }
 
-        void Start()
+        private void Start()
         {
             StartServer();
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
-            if (_instance != this)
-            {
-                return;
-            }
-
-            _instance = null;
+            DestroyServer();
 
             HTTPServer.Instance.Dispose();
+        }
 
-            // TODO: find a dynamic way to add handlers
-            Application.logMessageReceivedThreaded -= LogRoute.HandleLog;
+        protected virtual void AwakeServer()
+        {
+            
         }
 
         protected virtual void StartServer()
         {
             HTTPServer.Instance.StartListening();
+        }
+
+        protected virtual void DestroyServer()
+        {
+
         }
     }
 }
