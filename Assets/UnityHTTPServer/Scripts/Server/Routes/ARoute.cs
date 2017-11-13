@@ -9,23 +9,6 @@ namespace UnityHTTP
 {
     public abstract class ARoute
     {   
-        protected class NavLink : ILiquidizable
-        {
-            public string Title { get; set; }
-            public string Target { get; set; }
-            public string Class { get; set; }
-
-            public object ToLiquid()
-            {
-                return new
-                {
-                    Title,
-                    Target,
-                    Class
-                };
-            }
-        }
-
         public void HandleRequest(string method, HttpListenerResponse response, string id, string data)
         {
             switch (method)
@@ -63,15 +46,15 @@ namespace UnityHTTP
 
         protected Hash GetHTMLMenu(ARoute that, string content, string title = null)
         {
-            List <NavLink> links = new List<NavLink>();
+            List <Dictionary<string, object>> links = new List<Dictionary<string, object>>();
             foreach (var navLink in HTTPServer.Instance.NavLinks)
             {
                 string style = navLink.GetType() == that.GetType() ? "nav-link active" : "nav-link";
-                links.Add(new NavLink
+                links.Add(new Dictionary<string, object>()
                 {
-                    Class = style,
-                    Title = navLink.GetTitle(),
-                    Target = navLink.GetPath()
+                    {"class", style},
+                    {"title", navLink.GetTitle()},
+                    {"target",  navLink.GetPath()}
                 });
             }
             
