@@ -511,7 +511,8 @@ PlayerSettings:
   webGLUseEmbeddedResources: 0
   webGLUseWasm: 0
   webGLCompressionFormat: 1
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    1: DEVELOPER_TOOLS
   platformArchitecture: {}
   scriptingBackend:
     Android: 0

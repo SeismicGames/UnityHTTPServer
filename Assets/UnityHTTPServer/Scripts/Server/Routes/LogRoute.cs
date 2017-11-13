@@ -22,7 +22,7 @@ namespace UnityHTTP
         {
             string logContent = File.ReadAllText(LOG_FILENAME);
             Template template = GetHTMLTemplate();
-            string html = template.Render(GetHTMLHash(this, logContent));
+            string html = template.Render(GetHTMLMenu(this, logContent));
 
             // send response
             SendResponse(response, html, 200);

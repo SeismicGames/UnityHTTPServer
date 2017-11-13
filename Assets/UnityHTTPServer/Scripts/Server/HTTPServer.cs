@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Net.Sockets;
+using Seismic;
 
 namespace UnityHTTP
 {
@@ -11,6 +13,7 @@ namespace UnityHTTP
     {
         private readonly HttpListener _httpListener;
         private readonly Dictionary<Regex, ARoute> _routes = new Dictionary<Regex, ARoute>();
+        private const string _logTag = "HttpServer";
         
         // Singleton method
         private static HTTPServer _instance;
@@ -44,18 +47,38 @@ namespace UnityHTTP
             // test if available
             if (!HttpListener.IsSupported)
             {
-                Debug.Log("HTTPListener is not supported");
+                Log.Warn(_logTag,"HTTPListener is not supported");
                 return;
             }
-            Debug.Log("HTTPListener is supported");
+            Log.Info(_logTag,"HTTPListener is supported");
 
             _title = Application.productName;
 
             // set up HTTPListener
-            _host = "http://" + Network.player.ipAddress + ":9090/";
+            int port = 9090;
+            while(PortInUse(port)) ++port;
+            Log.Info(_logTag, "Using port {0}", port);
+
+            _host = string.Format("http://{0}:{1}/", Network.player.ipAddress, port);
             _httpListener = new HttpListener();
             _httpListener.Prefixes.Add(_host);
             _httpListener.AuthenticationSchemes = AuthenticationSchemes.Anonymous;
+        }
+        
+        public static bool PortInUse(int port)
+        {
+            try
+            {
+                var tcpListener = new TcpListener(IPAddress.Any, port);
+                tcpListener.Start();
+                tcpListener.Stop();
+            }
+            catch (SocketException)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         // class methods
@@ -120,7 +143,7 @@ namespace UnityHTTP
             }
 
             _httpListener.Start();
-            Debug.Log("Listening on " + _host);
+            Log.Info(_logTag, "Listening on " + _host);
             _httpListener.BeginGetContext(HTTPCallback, _httpListener);
         }
 
@@ -175,7 +198,7 @@ namespace UnityHTTP
                     }
                     catch (Exception e)
                     {
-                        Debug.LogErrorFormat("HTTPServer error: {0}", e.Message);
+                        Log.Error(_logTag, "HTTPServer error: {0}", e.Message);
                         ARoute.SendResponse(response, e.Message, 500);
                     }
 

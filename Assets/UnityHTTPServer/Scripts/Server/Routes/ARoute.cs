@@ -8,21 +8,22 @@ using DotLiquid;
 namespace UnityHTTP
 {
     public abstract class ARoute
-    {
-        [LiquidType("Content", "NavLinks", "Title")]
-        public class Menu
-        {
-            public List<NavLink> NavLinks { get; set; }
-            public string Content { get; set; }
-            public string Title { get; set; }
-        }
-
-        [LiquidType("Title", "Target", "Class")]
-        public class NavLink
+    {   
+        protected class NavLink : ILiquidizable
         {
             public string Title { get; set; }
             public string Target { get; set; }
             public string Class { get; set; }
+
+            public object ToLiquid()
+            {
+                return new
+                {
+                    Title,
+                    Target,
+                    Class
+                };
+            }
         }
 
         public void HandleRequest(string method, HttpListenerResponse response, string id, string data)
@@ -60,7 +61,7 @@ namespace UnityHTTP
 
         public abstract Regex GetPattern();
 
-        protected Hash GetHTMLHash(ARoute that, string content, string title = null)
+        protected Hash GetHTMLMenu(ARoute that, string content, string title = null)
         {
             List <NavLink> links = new List<NavLink>();
             foreach (var navLink in HTTPServer.Instance.NavLinks)
@@ -74,15 +75,14 @@ namespace UnityHTTP
                 });
             }
             
-            return Hash.FromAnonymousObject(new 
+            IDictionary<string, object> output = new Dictionary<string, object>
             {
-                menu = new Menu
-                {
-                    Title = title ?? HTTPServer.Instance.Title,
-                    Content = content,
-                    NavLinks = links
-                }
-            });
+                {"title", title ?? HTTPServer.Instance.Title},
+                {"content", content},
+                {"nav_links", links}
+            };
+            
+            return Hash.FromDictionary(output);
         }
 
         public static void SendResponse(HttpListenerResponse response, string html, int code)
@@ -110,7 +110,7 @@ namespace UnityHTTP
     
     <!--Bootstrap CSS-->
     <link rel = ""stylesheet"" href = ""https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css"" integrity = ""sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M"" crossorigin = ""anonymous"">         
-    <title>{{ menu.title }}</title>
+    <title>{{ title }}</title>
     <style>
     body {
         padding-top: 1.5rem;
@@ -130,17 +130,17 @@ namespace UnityHTTP
         <div class=""header clearfix"">
             <nav>
                 <ul class=""nav nav-pills float-right"">
-                {% for nav in menu.nav_links %}
+                {% for nav in nav_links %}
                     <li class=""nav-item"">
                         <a class=""{{ nav.class }}"" href=""{{ nav.target }}"">{{ nav.title }}</a>
                     </li>
                 {% endfor %}
                 </ul>
             </nav>
-            <h3 class=""text-muted"">{{ menu.title }}</h3>
+            <h3 class=""text-muted"">{{ title }}</h3>
         </div>
         
-        {{ menu.content }}
+        {{ content }}
     </div>
 
     <!--Optional JavaScript-->
